@@ -1,19 +1,16 @@
 import { ENROLL_URL, IMAGE_PATH } from "@/api/base-url";
 import { ChevronDown, Mail, Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
-import {
-  FaFacebookF,
-  FaInstagram,
-  FaLinkedinIn,
-  FaPinterestP,
-  FaTwitter,
-  FaWhatsapp,
-  FaYoutube,
-} from "react-icons/fa";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/common/optmized-image";
+
+const SocialMark = ({ children }) => (
+  <span className="inline-flex h-10 min-w-10 items-center justify-center text-[11px] font-bold leading-none">
+    {children}
+  </span>
+);
+
 const routePrefetch = {
-  "/": () => import("../pages/Home/Home"),
   "/about-aia": () => import("../pages/About/About"),
   "/cfe-curriculum": () => import("../pages/Courses/CFECurriculam"),
   "/cia-curriculum": () => import("../pages/Courses/CIACurriculam"),
@@ -39,7 +36,7 @@ const Navbar = () => {
       underline: true,
     },
     {
-      icon: <FaWhatsapp />,
+      icon: <SocialMark>WA</SocialMark>,
       text: "",
       href: "https://wa.me/+919311320114",
       color: "text-[#F3831C]",
@@ -108,32 +105,32 @@ const Navbar = () => {
 
   const socialLinks = [
     {
-      icon: FaFacebookF,
+      mark: "F",
       url: "https://www.facebook.com/@academyofinternalaudit",
       label: "Facebook",
     },
     {
-      icon: FaTwitter,
+      mark: "X",
       url: "https://twitter.com/AcademyAudit",
       label: "Twitter",
     },
     {
-      icon: FaInstagram,
+      mark: "IG",
       url: "https://www.instagram.com/academyofia/",
       label: "Instagram",
     },
     {
-      icon: FaLinkedinIn,
+      mark: "in",
       url: "https://www.linkedin.com/company/academy-of-internal-audit",
       label: "LinkedIn",
     },
     {
-      icon: FaPinterestP,
+      mark: "P",
       url: "https://in.pinterest.com/academyofia/",
       label: "Pinterest",
     },
     {
-      icon: FaYoutube,
+      mark: "YT",
       url: "https://www.youtube.com/@academyofia",
       label: "YouTube",
     },
@@ -164,9 +161,9 @@ const Navbar = () => {
               {links.map((link, index) => (
                 <a
                   key={index}
-                  href={link.href}
-                  className={`
-            flex items-center gap-2 relative ${link.color}
+                href={link.href}
+                className={`
+            flex min-h-10 items-center gap-2 relative ${link.color}
             ${
               link.underline
                 ? `
@@ -200,21 +197,18 @@ const Navbar = () => {
 
         <div className="text-white py-2.5">
           <div className="px-4 flex justify-center items-center gap-4">
-            {socialLinks.map((social, index) => {
-              const Icon = social.icon;
-              return (
-                <a
-                  key={index}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social.label}
-                  className="text-white hover:text-[#F3831C] transition-colors"
-                >
-                  <Icon size={18} />
-                </a>
-              );
-            })}
+            {socialLinks.map((social, index) => (
+              <a
+                key={index}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                className="inline-flex min-h-10 min-w-10 items-center justify-center text-white hover:text-[#F3831C] transition-colors"
+              >
+                <SocialMark>{social.mark}</SocialMark>
+              </a>
+            ))}
           </div>
         </div>
       </div>
@@ -322,7 +316,9 @@ const Navbar = () => {
             <div className="lg:hidden">
               <button
                 onClick={toggleMobileMenu}
-                className="text-[#0F3652] focus:outline-none"
+                className="min-h-11 min-w-11 text-[#0F3652] focus:outline-none"
+                aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
               </button>
@@ -337,7 +333,8 @@ const Navbar = () => {
             <div className="p-6">
               <button
                 onClick={toggleMobileMenu}
-                className="absolute top-7 right-6 text-[#0F3652]"
+                className="absolute top-7 right-6 min-h-11 min-w-11 text-[#0F3652]"
+                aria-label="Close navigation menu"
               >
                 <X size={28} />
               </button>
@@ -347,7 +344,7 @@ const Navbar = () => {
                   src={`${IMAGE_PATH}/new_logo.webp`}
                   alt="Academy of Internal Audit"
                   className="h-8 md:h-10 w-auto"
-                  fetchPriority="high"
+                  fetchpriority="high"
                   decoding="async"
                 />
               </div>
