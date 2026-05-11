@@ -1,7 +1,9 @@
 import { IMAGE_PATH } from "@/api/base-url";
+import { isReactSnapPrerender } from "@/lib/prerender";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 
 const BannerBlogCard = ({ blog, handleBlogClick, imageBaseUrl }) => {
+  const isPrerendering = isReactSnapPrerender();
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -22,16 +24,22 @@ const BannerBlogCard = ({ blog, handleBlogClick, imageBaseUrl }) => {
     >
       <div className="flex flex-col md:flex-row gap-6">
         <div className="md:w-2/5 relative overflow-hidden rounded-lg">
-          <div className="h-auto lg:h-full">
-            <img
-              src={`${imageBaseUrl}${blog.blog_images}`}
-              alt={blog.blog_images_alt || blog.blog_heading}
-              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-              onError={(e) => {
-                e.target.src = `${IMAGE_PATH}/no_image.jpg`;
-              }}
-              loading="lazy"
-            />
+          <div className="h-auto lg:h-full min-h-40 bg-gradient-to-r from-[#0F3652]/10 to-[#0F3652]/20">
+            {isPrerendering ? (
+              <span className="sr-only">
+                {blog.blog_images_alt || blog.blog_heading}
+              </span>
+            ) : (
+              <img
+                src={`${imageBaseUrl}${blog.blog_images}`}
+                alt={blog.blog_images_alt || blog.blog_heading}
+                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                onError={(e) => {
+                  e.target.src = `${IMAGE_PATH}/no_image.jpg`;
+                }}
+                loading="lazy"
+              />
+            )}
           </div>
           <div className="absolute top-1 left-1 lg:top-2 lg:left-2">
             {/* <span

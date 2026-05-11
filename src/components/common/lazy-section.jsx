@@ -6,6 +6,7 @@ import {
   useState,
   useTransition,
 } from "react";
+import { isReactSnapPrerender } from "@/lib/prerender";
 
 const SectionSkeleton = memo(function SectionSkeleton({ height }) {
   return (
@@ -24,7 +25,8 @@ const LazySection = memo(function LazySection({
   withQuery = false,
   QueryProvider,
 }) {
-  const [isVisible, setIsVisible] = useState(priority);
+  const isPrerendering = isReactSnapPrerender();
+  const [isVisible, setIsVisible] = useState(priority || isPrerendering);
   const [isPending, startTransition] = useTransition();
   const [reservedHeight, setReservedHeight] = useState(minHeight);
   const ref = useRef(null);
@@ -32,7 +34,7 @@ const LazySection = memo(function LazySection({
   const hasRendered = useRef(false);
 
   useEffect(() => {
-    if (priority) return;
+    if (priority || isPrerendering) return;
 
     if (!("IntersectionObserver" in window)) {
       hasRendered.current = true;
@@ -56,7 +58,7 @@ const LazySection = memo(function LazySection({
     }
 
     return () => observer.disconnect();
-  }, [minHeight, priority, rootMargin]);
+  }, [isPrerendering, minHeight, priority, rootMargin]);
 
   useEffect(() => {
     if (!isVisible || !contentRef.current) return;

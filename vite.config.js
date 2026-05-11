@@ -110,6 +110,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    target: "chrome61",
     chunkSizeWarningLimit: 1000,
 
     rollupOptions: {
