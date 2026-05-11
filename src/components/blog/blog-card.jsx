@@ -1,6 +1,7 @@
-import { IMAGE_PATH } from "@/api/base-url";
 import { isReactSnapPrerender } from "@/lib/prerender";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
+
+const FALLBACK_IMAGE_PATH = "/no-image.svg";
 
 const BlogCard = ({ imageBaseUrl = "", blog, handleBlogClick }) => {
   const isPrerendering = isReactSnapPrerender();
@@ -15,7 +16,13 @@ const BlogCard = ({ imageBaseUrl = "", blog, handleBlogClick }) => {
   const imageSrc =
     blog?.blog_images && imageBaseUrl
       ? `${imageBaseUrl}${blog.blog_images}`
-      : `${IMAGE_PATH}/no_image.jpg`;
+      : FALLBACK_IMAGE_PATH;
+  const handleImageFallback = (event) => {
+    const image = event.currentTarget;
+    if (image.dataset.fallbackApplied === "true") return;
+    image.dataset.fallbackApplied = "true";
+    image.src = FALLBACK_IMAGE_PATH;
+  };
   return (
     <a
       href={`/blogs/${blog.blog_slug}`}
@@ -38,10 +45,10 @@ const BlogCard = ({ imageBaseUrl = "", blog, handleBlogClick }) => {
               src={imageSrc}
               alt={blog?.blog_images_alt || blog?.blog_heading}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                e.currentTarget.src = `${IMAGE_PATH}/no_image.jpg`;
-              }}
+              onError={handleImageFallback}
               loading="lazy"
+              width={400}
+              height={260}
             />
           )}
         </div>

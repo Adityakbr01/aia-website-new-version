@@ -8,18 +8,17 @@ const Footer = lazy(() => import("./footer"));
 const DeferredFooter = () => {
   const { pathname } = useLocation();
   const isPrerendering = isReactSnapPrerender();
-  const [showFooter, setShowFooter] = useState(
-    isPrerendering || pathname !== "/",
-  );
+  const isHome = pathname === "/";
+  const [showFooter, setShowFooter] = useState(!isHome);
 
   useEffect(() => {
-    if (isPrerendering) {
+    if (pathname !== "/") {
       setShowFooter(true);
       return;
     }
 
-    if (pathname !== "/") {
-      setShowFooter(true);
+    if (isPrerendering) {
+      setShowFooter(false);
       return;
     }
 
