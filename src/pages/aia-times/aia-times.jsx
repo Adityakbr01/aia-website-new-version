@@ -3,7 +3,6 @@ import OptimizedImage from "@/components/common/optmized-image";
 import PdfJoinDialog from "@/components/common/PdfForm";
 import FaqSection from "@/components/common/faq-section";
 import TextCaptcha from "@/components/custom-captcha/text-captcha";
-import SectionHeading from "@/components/SectionHeading/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -29,7 +28,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 const ASSET_BASE = IMAGE_PATH;
-const LOCAL_ASSET_BASE = "/images/AIATimes";
+const SERVER_NO_IMAGE = `${BASE_URL}/assets/images/no_image.jpg`;
 const MAGAZINE_COURSE = "AIA Times Magazine";
 
 const whatsNewItems = [
@@ -180,12 +179,7 @@ const conversationItems = [
   },
 ];
 
-const localFlipbookPages = Array.from({ length: 8 }, (_, index) => {
-  const page = String(index + 1).padStart(2, "0");
-  return `${LOCAL_ASSET_BASE}/flipbook/page-${page}.webp`;
-});
-
-const flipbookPageSources = localFlipbookPages.map((localPage, index) => {
+const flipbookPageSources = Array.from({ length: 8 }, (_, index) => {
   const page = index + 1;
   const padded = String(page).padStart(2, "0");
   const paddedThree = String(page).padStart(3, "0");
@@ -201,7 +195,6 @@ const flipbookPageSources = localFlipbookPages.map((localPage, index) => {
     `${IMAGE_PATH}/flipbook/aia_times_${padded}.webp`,
     `${IMAGE_PATH}/flipbook/aia-times-magazine-${padded}.webp`,
     `${IMAGE_PATH}/flipbook/aia_times_magazine_${padded}.webp`,
-    localPage,
   ];
 });
 
@@ -289,7 +282,8 @@ function AiaTimesBanner() {
               index === activeBanner ? "opacity-100" : "opacity-0",
             )}
             onError={(event) => {
-              event.currentTarget.src = `${LOCAL_ASSET_BASE}/subscribe.webp`;
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = `${ASSET_BASE}/subscribe.webp`;
             }}
           />
         ))
@@ -1021,39 +1015,50 @@ function IntroSection() {
 
 function WhatsNewSection() {
   return (
-    <section className="bg-white py-12 md:py-16">
+    <section className="bg-[#0F3652] py-9 md:py-10">
       <div className="mx-auto max-w-340 px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          align="center"
-          title="What's New at AIA"
-          description="Recent launches, strategic partnerships, and key professional updates."
-        />
+        <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-center">
+          <div className="text-white">
+            <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">
+              What&apos;s New at AIA
+            </h2>
+            <p className="mt-2 max-w-xs text-base font-medium leading-6 text-white/90">
+              Recent Launches, Strategic Partnerships & Key Professional
+              Updates
+            </p>
+          </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {whatsNewItems.map((item) => (
-            <article
-              key={item.title}
-              className="group overflow-hidden border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#F3831C]/60 hover:shadow-lg"
-            >
-              <div className="flex h-36 items-center justify-center bg-[#f8fafc] p-4">
-                <OptimizedImage
-                  src={`${ASSET_BASE}/${item.image}`}
-                  alt={item.title}
-                  width={213}
-                  height={152}
-                  className="max-h-full w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                />
+          <div className="min-w-0">
+            <div className="overflow-x-auto pb-6 [scrollbar-color:#F3831C_#efe3d6] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#F3831C] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#efe3d6]">
+              <div className="flex w-max min-w-full gap-5">
+                {whatsNewItems.map((item, index) => (
+                  <article
+                    key={item.title}
+                    className={cn(
+                      "w-60 shrink-0 pl-5 text-center",
+                      index > 0 && "border-l border-white/70",
+                    )}
+                  >
+                    <div className="flex h-36 w-full items-center justify-center bg-white p-4">
+                      <OptimizedImage
+                        src={`${ASSET_BASE}/${item.image}`}
+                        alt={item.title}
+                        width={240}
+                        height={150}
+                        className="max-h-full w-full object-contain"
+                      />
+                    </div>
+                    <h3 className="mt-4 text-xs font-extrabold leading-snug text-white">
+                      {item.title}
+                    </h3>
+                    <p className="mx-auto mt-1 max-w-52 text-[10px] font-medium leading-4 text-white/85">
+                      {item.description}
+                    </p>
+                  </article>
+                ))}
               </div>
-              <div className="p-5">
-                <h3 className="text-lg font-bold text-[#0F3652]">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {item.description}
-                </p>
-              </div>
-            </article>
-          ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1071,14 +1076,13 @@ function PrMediaSection() {
 
   const prItems = useMemo(() => {
     const imageBase = getImageBase(data, "Pr");
+    const noImage = getImageBase(data, "No Image") || SERVER_NO_IMAGE;
     return (data?.data || []).map((item) => ({
       id: item.id,
       title: item.pr_heading,
       buttonTitle: item.button_title,
       link: item.pr_link,
-      image: item.pr_l_image
-        ? `${imageBase}${item.pr_l_image}`
-        : `${data?.image_url?.[0]?.image_url || "/no-image.svg"}`,
+      image: item.pr_l_image ? `${imageBase}${item.pr_l_image}` : noImage,
       alt: item.pr_image_alt || item.button_title || "AIA media feature",
     }));
   }, [data]);
@@ -1162,7 +1166,8 @@ function PrMediaSection() {
                   height={620}
                   className="h-full min-h-[360px] w-full object-cover object-top"
                   onError={(event) => {
-                    event.currentTarget.src = "/no-image.svg";
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = SERVER_NO_IMAGE;
                   }}
                 />
               </div>
@@ -1194,7 +1199,8 @@ function PrMediaSection() {
                     height={230}
                     className="h-40 w-full object-cover object-top"
                     onError={(event) => {
-                      event.currentTarget.src = "/no-image.svg";
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = SERVER_NO_IMAGE;
                     }}
                   />
                 </div>
@@ -1229,7 +1235,8 @@ function PrMediaSection() {
                     height={180}
                     className="h-28 w-full object-cover object-top"
                     onError={(event) => {
-                      event.currentTarget.src = "/no-image.svg";
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = SERVER_NO_IMAGE;
                     }}
                   />
                 </div>
@@ -1435,7 +1442,7 @@ function TeamSection() {
 
   const team = useMemo(() => {
     const imageBase = getImageBase(data, "Team");
-    const noImage = getImageBase(data, "No Image") || "/no-image.svg";
+    const noImage = getImageBase(data, "No Image") || SERVER_NO_IMAGE;
     return (data?.data || []).map((member) => ({
       id: member.id,
       name: member.team_name,
@@ -1480,7 +1487,8 @@ function TeamSection() {
                 height={180}
                 className="mx-auto h-32 w-32 rounded-full object-cover"
                 onError={(event) => {
-                  event.currentTarget.src = "/no-image.svg";
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = SERVER_NO_IMAGE;
                 }}
               />
               <h3 className="mt-5 text-xl font-bold text-black">
