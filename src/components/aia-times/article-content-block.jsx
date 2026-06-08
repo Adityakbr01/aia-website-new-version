@@ -1,13 +1,49 @@
+function renderInlineText(content, keyPrefix) {
+  if (!Array.isArray(content)) {
+    return content;
+  }
+
+  return content.map((segment, index) => {
+    const segmentText =
+      typeof segment === "string" ? segment : segment?.text || "";
+
+    if (!segmentText) {
+      return null;
+    }
+
+    let inlineContent = segmentText;
+
+    if (typeof segment !== "string" && segment.italic) {
+      inlineContent = <em className="italic">{inlineContent}</em>;
+    }
+
+    if (typeof segment !== "string" && segment.bold) {
+      inlineContent = (
+        <strong className="font-extrabold text-black">{inlineContent}</strong>
+      );
+    }
+
+    return <span key={`${keyPrefix}-${index}`}>{inlineContent}</span>;
+  });
+}
+
+export function ArticleInlineContent({ content, keyPrefix }) {
+  return renderInlineText(content, keyPrefix);
+}
+
 export default function ArticleContentBlock({ article, block, index }) {
-  const type = typeof block === "string" ? "paragraph" : block?.type;
-  const text = typeof block === "string" ? block : block?.text;
+  const isInlineContent = Array.isArray(block);
+  const type =
+    typeof block === "string" || isInlineContent ? "paragraph" : block?.type;
+  const text =
+    typeof block === "string" || isInlineContent ? block : block?.text;
 
   if (!text) return null;
 
   if (type === "heading") {
     return (
       <h3 className="pt-3 text-xl font-extrabold leading-tight text-black">
-        {text}
+        {renderInlineText(text, `${article.title}-${index}-heading`)}
       </h3>
     );
   }
@@ -15,7 +51,7 @@ export default function ArticleContentBlock({ article, block, index }) {
   if (type === "question") {
     return (
       <h3 className="pt-2 text-lg font-extrabold leading-snug text-black">
-        {text}
+        {renderInlineText(text, `${article.title}-${index}-question`)}
       </h3>
     );
   }
@@ -23,7 +59,7 @@ export default function ArticleContentBlock({ article, block, index }) {
   if (type === "insight") {
     return (
       <div className="rounded-md border-l-4 border-[#f36f21] bg-[#fff3ec] px-4 py-3 text-base font-semibold leading-7 text-black">
-        {text}
+        {renderInlineText(text, `${article.title}-${index}-insight`)}
       </div>
     );
   }
@@ -31,7 +67,7 @@ export default function ArticleContentBlock({ article, block, index }) {
   if (type === "disclaimer") {
     return (
       <p className="text-sm italic leading-7 text-slate-600">
-        {text}
+        {renderInlineText(text, `${article.title}-${index}-disclaimer`)}
       </p>
     );
   }
@@ -43,7 +79,7 @@ export default function ArticleContentBlock({ article, block, index }) {
           {article.bodyLabel}{" "}
         </strong>
       ) : null}
-      {text}
+      {renderInlineText(text, `${article.title}-${index}-paragraph`)}
     </p>
   );
 }

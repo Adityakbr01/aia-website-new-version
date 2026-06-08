@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import ArticleContentBlock from "./article-content-block";
+import ArticleContentBlock, { ArticleInlineContent } from "./article-content-block";
 import { ASSET_BASE } from "./aia-times.constants";
 
 export default function IssueDetailsSection({ selectedIssue }) {
@@ -84,7 +84,10 @@ export default function IssueDetailsSection({ selectedIssue }) {
                       {item.bodyLabel}{" "}
                     </strong>
                   )}
-                  {item.description}
+                  <ArticleInlineContent
+                    content={item.descriptionContent || item.description}
+                    keyPrefix={`${item.title}-description`}
+                  />
                 </p>
                 <button
                   type="button"

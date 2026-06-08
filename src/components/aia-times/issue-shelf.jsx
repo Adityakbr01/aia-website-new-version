@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { BookOpen, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import ArticleContentBlock from "./article-content-block";
+import ArticleContentBlock, { ArticleInlineContent } from "./article-content-block";
 import FlipbookSection from "./flipbook-section";
 import {
   ASSET_BASE,
@@ -94,11 +94,14 @@ export default function IssueShelf({ selectedIssue, onSelectIssue }) {
             <div className="flex min-w-0 flex-col text-left text-[15px] font-medium leading-[1.35] text-black">
               <p className="[text-align:justify]">
                 {item.bodyLabel && (
-                  <strong className="mr-2 font-extrabold italic">
-                    {item.bodyLabel}
+                  <strong className="font-extrabold italic text-black">
+                    {item.bodyLabel}{" "}
                   </strong>
                 )}
-                {item.description}
+                <ArticleInlineContent
+                  content={item.descriptionContent || item.description}
+                  keyPrefix={`${item.title}-description`}
+                />
               </p>
               <button
                 type="button"
