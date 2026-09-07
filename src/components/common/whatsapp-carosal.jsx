@@ -647,7 +647,7 @@ export const TestimonialSlider = ({
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.6, ease }}
-                className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                className="absolute inset-0 w-full h-full object-contain rounded-lg"
                 onLoad={() => handleImageLoad(activeReview.image)}
               />
             </AnimatePresence>
@@ -655,7 +655,7 @@ export const TestimonialSlider = ({
             <img
               src={activeReview.image}
               alt={activeReview.alt || `Slide ${currentIndex + 1}`}
-              className="absolute inset-0 w-full h-full object-cover rounded-lg"
+              className="absolute inset-0 w-full h-full object-contain rounded-lg"
               onLoad={() => handleImageLoad(activeReview.image)}
               loading="lazy"
             />
