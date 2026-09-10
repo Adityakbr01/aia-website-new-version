@@ -231,8 +231,8 @@ const BlogDetails = () => {
       if (error.response) {
         setSubscriptionStatus(
           error.response.data.message ||
-            error.response.data.error ||
-            "Subscription failed. Please try again.",
+          error.response.data.error ||
+          "Subscription failed. Please try again.",
         );
       } else if (error.request) {
         setSubscriptionStatus("Network error. Please check your connection.");
@@ -382,13 +382,13 @@ const BlogDetails = () => {
         <meta name="description" content={blogDescription} />
         <meta name="keywords" content={blogKeywords} />
         <link rel="canonical" href={blogCanonical} />
-        
+
         {/* Open Graph */}
         <meta property="og:title" content={blogTitle} />
         <meta property="og:description" content={blogDescription} />
         <meta property="og:url" content={blogCanonical} />
         <meta property="og:image" content={blogImageUrl} />
-        
+
         {/* Twitter */}
         <meta name="twitter:title" content={blogTitle} />
         <meta name="twitter:description" content={blogDescription} />
@@ -518,11 +518,10 @@ const BlogDetails = () => {
                       <li key={sub.id}>
                         <button
                           onClick={(e) => scrollToSection(index, e)}
-                          className={`w-full text-left p-1 rounded text-sm transition-colors ${
-                            activeSection === index
+                          className={`w-full text-left p-1 rounded text-sm transition-colors ${activeSection === index
                               ? "bg-[#F3831C]/10 text-[#F3831C] border-l-4 border-[#F3831C]"
                               : "text-[#0F3652] hover:bg-[#0F3652]/5"
-                          }`}
+                            }`}
                         >
                           {sub.blog_sub_heading || `Section ${index + 1}`}
                         </button>
@@ -550,11 +549,10 @@ const BlogDetails = () => {
                       <button
                         type="submit"
                         disabled={isSubscribing}
-                        className={`w-full py-3 ${
-                          isSubscribing
+                        className={`w-full py-3 ${isSubscribing
                             ? "bg-[#F3831C]/70"
                             : "bg-[#F3831C] hover:bg-[#F3831C]/90"
-                        } text-white font-semibold rounded-2xl transition-colors disabled:cursor-not-allowed`}
+                          } text-white font-semibold rounded-2xl transition-colors disabled:cursor-not-allowed`}
                       >
                         {isSubscribing ? "Subscribing..." : "Subscribe"}
                       </button>
@@ -562,11 +560,10 @@ const BlogDetails = () => {
 
                     {subscriptionStatus && (
                       <div
-                        className={`text-sm ${
-                          subscriptionStatus.includes("Success")
+                        className={`text-sm ${subscriptionStatus.includes("Success")
                             ? "text-[#F3831C]"
                             : "text-[#F3831C]"
-                        } font-medium text-center`}
+                          } font-medium text-center`}
                       >
                         {subscriptionStatus}
                       </div>
@@ -582,11 +579,10 @@ const BlogDetails = () => {
           <main
             className={`
             ${blog.web_blog_subs?.length > 0 ? "lg:w-3/4" : "w-full"} 
-            ${
-              blog.web_blog_subs?.length > 0 && relatedBlogs.length > 0
+            ${blog.web_blog_subs?.length > 0 && relatedBlogs.length > 0
                 ? "lg:w-2/4"
                 : ""
-            }
+              }
           `}
           >
             {blog.web_blog_subs?.length > 0 ? (
@@ -615,11 +611,9 @@ const BlogDetails = () => {
                       className="scroll-mt-[120px]"
                     >
                       <HeadingTag
-                        className={`${
-                          sizeClasses[HeadingTag]
-                        } mb-6 text-[#0F3652] ${
-                          HeadingTag !== "p" ? "pb-3 border-b" : ""
-                        }`}
+                        className={`${sizeClasses[HeadingTag]
+                          } mb-6 text-[#0F3652] ${HeadingTag !== "p" ? "pb-3 border-b" : ""
+                          }`}
                       >
                         {sub.blog_sub_heading || `Section ${index + 1}`}
                       </HeadingTag>
@@ -864,9 +858,8 @@ const BlogDetails = () => {
                           <div
                             className="flex transition-transform duration-700 ease-out"
                             style={{
-                              transform: `translateX(-${
-                                currentStudentIndex * 100
-                              }%)`,
+                              transform: `translateX(-${currentStudentIndex * 100
+                                }%)`,
                             }}
                           >
                             {students.map((student, index) => (
@@ -962,11 +955,10 @@ const BlogDetails = () => {
                   <button
                     type="submit"
                     disabled={isSubscribing}
-                    className={`md:w-auto md:px-8 py-3 md:py-3.5 ${
-                      isSubscribing
+                    className={`md:w-auto md:px-8 py-3 md:py-3.5 ${isSubscribing
                         ? "bg-[#F3831C]/70"
                         : "bg-[#F3831C] hover:bg-[#F3831C]/90"
-                    } text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed whitespace-nowrap shadow-md hover:shadow-lg`}
+                      } text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed whitespace-nowrap shadow-md hover:shadow-lg`}
                   >
                     {isSubscribing ? (
                       <span className="flex items-center justify-center gap-2">
@@ -999,11 +991,10 @@ const BlogDetails = () => {
 
                 {subscriptionStatus && (
                   <div
-                    className={`flex items-center justify-center gap-2 p-3 rounded-lg ${
-                      subscriptionStatus.includes("Success")
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg ${subscriptionStatus.includes("Success")
                         ? "bg-green-50 text-green-700 border border-green-200"
                         : "bg-red-50 text-red-700 border border-red-200"
-                    } text-sm font-medium transition-all`}
+                      } text-sm font-medium transition-all`}
                   >
                     {subscriptionStatus.includes("Success") ? (
                       <svg
