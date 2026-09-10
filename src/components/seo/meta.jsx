@@ -4,10 +4,10 @@ import { buildCanonicalUrl, SITE_URL } from "@/lib/seo";
 import metaDataConfig from "../../meta/meta.json";
 
 const DEFAULT_META = {
-  title: "Best Training Institute For Top Certification Courses- AIA",
+  title: "Academy of Internal Audit | Best Training Institute For Top Certification Courses - AIA",
   description:
     "Academy of Internal Audit (AIA) is Online Training Institute for Global Certification Courses like CIA, CFE, and other International Certification Courses.",
-  keywords: "CIA, CFE, CAMS, Internal Audit, Training Institute, Fraud Examiner",
+  keywords: "CIA, CFE, CAMS, Internal Audit, Training Institute, Fraud Examiner, Academy of Internal Audit",
 };
 
 const UPPERCASE_WORDS = {
@@ -101,8 +101,9 @@ export default function Meta() {
   const orgSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "AIA",
-    "alternateName": "Academy of Internal Audit",
+    "@id": `${rootUrl}#organization`,
+    "name": "Academy of Internal Audit",
+    "alternateName": "AIA",
     "url": rootUrl,
     "logo": `${baseUrl}/webapi/public/assets/images/web_images/new_logo.webp`,
     "sameAs": [
@@ -145,7 +146,14 @@ export default function Meta() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "AIA",
+    "@id": `${rootUrl}#website`,
+    "name": "Academy of Internal Audit",
+    "alternateName": [
+      "AIA",
+      "Academy of Internal Audit",
+      "AIA Institute",
+      "aia.in.net"
+    ],
     "url": rootUrl,
     "potentialAction": {
       "@type": "SearchAction",
@@ -162,6 +170,7 @@ export default function Meta() {
       <meta name="description" content={pageMeta.description} />
       <meta name="keywords" content={pageMeta.keywords || DEFAULT_META.keywords} />
       <meta name="robots" content={robotsMeta} />
+      <meta name="application-name" content="Academy of Internal Audit" />
 
       {/* Canonical */}
       <link rel="canonical" href={canonicalUrl} />
@@ -172,7 +181,7 @@ export default function Meta() {
       <meta property="og:title" content={pageMeta.title} />
       <meta property="og:description" content={pageMeta.description} />
       <meta property="og:image" content={`${baseUrl}/android-chrome-512x512.png`} />
-      <meta property="og:site_name" content="AIA" />
+      <meta property="og:site_name" content="Academy of Internal Audit" />
 
       {/* Twitter */}
       <meta property="twitter:card" content="summary_large_image" />
