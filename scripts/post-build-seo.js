@@ -86,7 +86,7 @@ const ORGANIZATION_SCHEMA = {
 
 function upsertSchema(html, type, schemaObject) {
   const schemaString = JSON.stringify(schemaObject);
-  const regex = new RegExp(`<script\\b[^>]*type=["']application/ld\\+json["'][^>]*>[\\s\\S]*?"@type"\\s*:\\s*["']${type}["'][\\s\\S]*?</script>`, 'gi');
+  const regex = new RegExp(`<script\\b[^>]*type=["']application/ld\\+json["'][^>]*>(?:(?!<\\/script>)[\\s\\S])*?"@type"\\s*:\\s*["']${type}["'](?:(?!<\\/script>)[\\s\\S])*?<\\/script>`, 'gi');
   const tag = `<script type="application/ld+json" data-rh="true">${schemaString}</script>`;
   let replaced = false;
 
@@ -427,7 +427,7 @@ function applySeoTags(html, routePath, metaData, blogMetaBySlug) {
     const schemaTag = `<script type="application/ld+json" data-rh="true">${JSON.stringify(blogSchema)}</script>`;
     
     // Replace existing BlogPosting schema if it exists, otherwise append to head
-    const existingSchemaRegex = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>\{[^}]*?"@type"\s*:\s*["']BlogPosting["'][^}]*?\}<\/script>/gi;
+    const existingSchemaRegex = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>(?:(?!<\/script>)[\s\S])*?"@type"\s*:\s*["']BlogPosting["'](?:(?!<\/script>)[\s\S])*?<\/script>/gi;
     if (existingSchemaRegex.test(html)) {
       html = html.replace(existingSchemaRegex, schemaTag);
     } else {
