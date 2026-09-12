@@ -1,6 +1,19 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  appendLdJson,
+  buildBlogPosting,
+  buildPageGraph,
+  crumbsFromPath,
+  DEFAULT_SOCIAL_IMAGE,
+  isAiaSiteGraphScript,
+  isBlogPostingScript,
+  isBreadcrumbScript,
+  isLegacyReviewScript,
+  plainText,
+  removeLdJsonScripts,
+} from '../src/lib/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,11 +28,22 @@ const BLOG_DETAIL_API_URL = `${SITE_ORIGIN}/webapi/public/api/getBlogbySlug`;
 const API_TIMEOUT_MS = 30000;
 const BLOG_META_FETCH_CONCURRENCY = 6;
 
+// Course paths whose canonical URL has NO trailing slash. Single definition
+// shared by buildCanonicalUrl below; must stay in sync with src/lib/seo.js,
+// generate-sitemap.js and the vercel.json redirects.
+const NON_TRAILING_SLASH_PATHS = new Set([
+  '/cfe-curriculum',
+  '/cia-curriculum',
+  '/cia-challenge-curriculum',
+  '/cams',
+  '/cisa',
+]);
+
 const DEFAULT_META = {
-  title: 'Academy of Internal Audit | Best Training Institute For Top Certification Courses - AIA',
+  title: 'Best Training Institute For Top Certification Courses- AIA',
   description:
     'Academy of Internal Audit (AIA) is Online Training Institute for Global Certification Courses like CIA, CFE, and other International Certification Courses.',
-  keywords: 'CIA, CFE, CAMS, Internal Audit, Training Institute, Fraud Examiner, Academy of Internal Audit',
+  keywords: 'CIA, CFE, CAMS, Internal Audit, Training Institute, Fraud Examiner',
 };
 
 const UPPERCASE_WORDS = {
@@ -45,59 +69,6 @@ function upsertHeadTag(html, selector, tag) {
 
   if (replaced) return nextHtml;
   return html.replace('<head>', `<head>\n    ${tag}`);
-}
-
-const WEBSITE_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "@id": `${SITE_ORIGIN}/#website`,
-  "name": "Academy of Internal Audit",
-  "alternateName": [
-    "AIA",
-    "Academy of Internal Audit",
-    "AIA Institute",
-    "aia.in.net"
-  ],
-  "url": `${SITE_ORIGIN}/`,
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": `${SITE_ORIGIN}/blogs/?s={search_term_string}`,
-    "query-input": "required name=search_term_string"
-  }
-};
-
-const ORGANIZATION_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "@id": `${SITE_ORIGIN}/#organization`,
-  "name": "Academy of Internal Audit",
-  "alternateName": "AIA",
-  "url": `${SITE_ORIGIN}/`,
-  "logo": `${SITE_ORIGIN}/webapi/public/assets/images/web_images/new_logo.webp`,
-  "sameAs": [
-    "https://www.facebook.com/@academyofinternalaudit",
-    "https://twitter.com/AcademyAudit",
-    "https://www.instagram.com/academyofia/",
-    "https://www.linkedin.com/company/academy-of-internal-audit",
-    "https://in.pinterest.com/academyofia/",
-    "https://www.youtube.com/@academyofia"
-  ]
-};
-
-function upsertSchema(html, type, schemaObject) {
-  const schemaString = JSON.stringify(schemaObject);
-  const regex = new RegExp(`<script\\b[^>]*type=["']application/ld\\+json["'][^>]*>(?:(?!<\\/script>)[\\s\\S])*?"@type"\\s*:\\s*["']${type}["'](?:(?!<\\/script>)[\\s\\S])*?<\\/script>`, 'gi');
-  const tag = `<script type="application/ld+json" data-rh="true">${schemaString}</script>`;
-  let replaced = false;
-
-  const nextHtml = html.replace(regex, () => {
-    if (replaced) return '';
-    replaced = true;
-    return tag;
-  });
-
-  if (replaced) return nextHtml;
-  return html.replace('</head>', `    ${tag}\n</head>`);
 }
 
 function headMetaSelector(attributeName, value) {
@@ -153,7 +124,13 @@ function normalizeRoutePath(value) {
 
 function buildCanonicalUrl(routePath) {
   const normalized = normalizeRoutePath(routePath);
-  return normalized === '/' ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${normalized}/`;
+  if (normalized === '/') return `${SITE_ORIGIN}/`;
+  // Must match src/lib/seo.js + generate-sitemap.js + vercel.json redirects:
+  // these course paths are canonical WITHOUT a trailing slash.
+  if (NON_TRAILING_SLASH_PATHS.has(normalized)) {
+    return `${SITE_ORIGIN}${normalized}`;
+  }
+  return `${SITE_ORIGIN}${normalized}/`;
 }
 
 function getBlogSlugFromRoute(routePath) {
@@ -357,81 +334,78 @@ function applySeoTags(html, routePath, metaData, blogMetaBySlug) {
   const pageDescription = pageMeta.description || DEFAULT_META.description;
   const pageKeywords = pageMeta.keywords || DEFAULT_META.keywords;
   const canonicalUrl = buildCanonicalUrl(routePath);
+  const normalizedPath = normalizeRoutePath(routePath);
 
-  html = upsertHeadTag(html, /<title[\s\S]*?<\/title>/i, `<title data-rh="true">${escapeHtml(pageTitle)}</title>`);
-  html = upsertHeadTag(html, headMetaSelector('name', 'application-name'), '<meta name="application-name" content="Academy of Internal Audit">');
+  html = upsertHeadTag(html, /<title>.*?<\/title>/i, `<title data-rh="true">${escapeHtml(pageTitle)}</title>`);
   html = upsertHeadTag(html, headMetaSelector('name', 'title'), `<meta name="title" content="${escapeAttribute(pageTitle)}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaSelector('name', 'description'), `<meta name="description" content="${escapeAttribute(pageDescription)}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaSelector('name', 'keywords'), `<meta name="keywords" content="${escapeAttribute(pageKeywords)}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaSelector('name', 'robots'), '<meta name="robots" content="index, follow" data-rh="true">');
   html = upsertHeadTag(html, /<link\b(?=[^>]*\brel=["']canonical["'])[^>]*>/i, `<link rel="canonical" href="${canonicalUrl}" data-rh="true">`);
-  html = upsertHeadTag(html, headMetaSelector('property', 'og:site_name'), '<meta property="og:site_name" content="Academy of Internal Audit" data-rh="true">');
+  html = upsertHeadTag(html, headMetaSelector('property', 'og:type'), `<meta property="og:type" content="website" data-rh="true">`);
   html = upsertHeadTag(html, headMetaSelector('property', 'og:url'), `<meta property="og:url" content="${canonicalUrl}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaSelector('property', 'og:title'), `<meta property="og:title" content="${escapeAttribute(pageTitle)}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaSelector('property', 'og:description'), `<meta property="og:description" content="${escapeAttribute(pageDescription)}" data-rh="true">`);
-  html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:url'), `<meta property="twitter:url" content="${canonicalUrl}" data-rh="true">`);
+  // Default social image only when the prerendered HTML has none, so a
+  // Helmet-rendered per-post image is never clobbered by the fallback.
+  if (!headMetaSelector('property', 'og:image').test(html)) {
+    html = upsertHeadTag(html, headMetaSelector('property', 'og:image'), `<meta property="og:image" content="${DEFAULT_SOCIAL_IMAGE}" data-rh="true">`);
+  }
+  html = upsertHeadTag(html, headMetaSelector('property', 'og:locale'), `<meta property="og:locale" content="en_US" data-rh="true">`);
+  html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:card'), `<meta name="twitter:card" content="summary_large_image" data-rh="true">`);
+  html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:url'), `<meta name="twitter:url" content="${canonicalUrl}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:title'), `<meta name="twitter:title" content="${escapeAttribute(pageTitle)}" data-rh="true">`);
   html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:description'), `<meta name="twitter:description" content="${escapeAttribute(pageDescription)}" data-rh="true">`);
+  if (!headMetaNameOrPropertySelector('twitter:image').test(html)) {
+    html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:image'), `<meta name="twitter:image" content="${DEFAULT_SOCIAL_IMAGE}" data-rh="true">`);
+  }
 
-  html = upsertSchema(html, 'WebSite', WEBSITE_SCHEMA);
-  html = upsertSchema(html, 'Organization', ORGANIZATION_SCHEMA);
+  // --- Structured data: exactly one @graph per page -----------------------
+  // Remove any prerendered AIA site-graph / BlogPosting / legacy breadcrumb /
+  // legacy fake-review scripts first so the file below never carries
+  // duplicates, stale per-route breadcrumbs, or policy-violating ratings.
+  // (A clean, rating-free Course block from <CourseReview /> is preserved.)
+  html = removeLdJsonScripts(
+    html,
+    (tag) => isAiaSiteGraphScript(tag) || isBlogPostingScript(tag) || isBreadcrumbScript(tag) || isLegacyReviewScript(tag),
+  );
+
+  const pageGraph = buildPageGraph({
+    canonicalUrl,
+    title: pageTitle,
+    description: plainText(pageDescription).slice(0, 500),
+    crumbs: crumbsFromPath(normalizedPath, buildCanonicalUrl),
+  });
+  html = appendLdJson(html, pageGraph);
 
   // Inject BlogPosting schema tag if this is a blog detail page
   const blogSlug = getBlogSlugFromRoute(routePath);
   if (blogSlug && pageMeta.rawBlog) {
     const blog = pageMeta.rawBlog;
-    const formatSchemaDate = (dateString) => {
-      if (!dateString) return "";
-      try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return "";
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      } catch {
-        return "";
-      }
-    };
 
     const imageUrl = blog.blog_images && pageMeta.imageBaseUrl
       ? `${pageMeta.imageBaseUrl}${blog.blog_images}`
       : 'https://aia.in.net/no-image.svg';
 
-    const blogSchema = {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "mainEntityOfPage": {
-        "@type": "WebPage",
-        "@id": canonicalUrl,
-      },
-      "headline": blog.blog_heading,
-      "description": blog.blog_short_description || pageDescription,
-      "image": imageUrl,
-      "author": {
-        "@type": "Organization",
-        "name": "AIA"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Academy of Internal Audit",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://aia.in.net/webapi/public/assets/images/web_images/new_logo.webp"
-        }
-      },
-      "datePublished": formatSchemaDate(blog.created_at) || formatSchemaDate(blog.blog_created),
-      "dateModified": formatSchemaDate(blog.updated_at) || formatSchemaDate(blog.blog_created)
-    };
+    const blogSchema = buildBlogPosting({
+      headline: blog.blog_heading,
+      description: blog.blog_short_description || pageDescription,
+      image: imageUrl,
+      canonicalUrl,
+      datePublished: blog.created_at || blog.blog_created,
+      dateModified: blog.updated_at || blog.blog_created,
+    });
+    html = appendLdJson(html, blogSchema);
 
-    const schemaTag = `<script type="application/ld+json" data-rh="true">${JSON.stringify(blogSchema)}</script>`;
-    
-    // Replace existing BlogPosting schema if it exists, otherwise append to head
-    const existingSchemaRegex = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>(?:(?!<\/script>)[\s\S])*?"@type"\s*:\s*["']BlogPosting["'](?:(?!<\/script>)[\s\S])*?<\/script>/gi;
-    if (existingSchemaRegex.test(html)) {
-      html = html.replace(existingSchemaRegex, schemaTag);
-    } else {
-      html = html.replace('</head>', `    ${schemaTag}\n</head>`);
+    // Keep social/article tags in sync with the post for shell-served HTML.
+    html = upsertHeadTag(html, headMetaSelector('property', 'og:type'), `<meta property="og:type" content="article" data-rh="true">`);
+    html = upsertHeadTag(html, headMetaSelector('property', 'og:image'), `<meta property="og:image" content="${escapeAttribute(imageUrl)}" data-rh="true">`);
+    html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:image'), `<meta name="twitter:image" content="${escapeAttribute(imageUrl)}" data-rh="true">`);
+    if (blogSchema.datePublished) {
+      html = upsertHeadTag(html, headMetaSelector('property', 'article:published_time'), `<meta property="article:published_time" content="${blogSchema.datePublished}" data-rh="true">`);
+    }
+    if (blogSchema.dateModified) {
+      html = upsertHeadTag(html, headMetaSelector('property', 'article:modified_time'), `<meta property="article:modified_time" content="${blogSchema.dateModified}" data-rh="true">`);
     }
   }
 
@@ -462,30 +436,45 @@ async function prerenderHomepage() {
     }
 
     const metaData = JSON.parse(fs.readFileSync(META_PATH, 'utf-8'));
-    const homeMeta = metaData['/'] || DEFAULT_META;
+    const homeMeta = metaData['/'] || {
+      title: "Best Training Institute For Top Certification Courses- AIA",
+      description: "Academy of Internal Audit (AIA) is Online Training Institute for Global Certification Courses like CIA, CFE, and other International Certification Courses."
+    };
     const canonicalUrl = 'https://aia.in.net/';
 
     let html = fs.readFileSync(DIST_PATH, 'utf-8');
 
-    html = upsertHeadTag(html, /<title[\s\S]*?<\/title>/i, `<title data-rh="true">${escapeHtml(homeMeta.title)}</title>`);
-    html = upsertHeadTag(html, headMetaSelector('name', 'application-name'), '<meta name="application-name" content="Academy of Internal Audit">');
+    html = upsertHeadTag(html, /<title>.*?<\/title>/i, `<title data-rh="true">${escapeHtml(homeMeta.title)}</title>`);
+    
     html = upsertHeadTag(html, headMetaSelector('name', 'title'), `<meta name="title" content="${escapeAttribute(homeMeta.title)}" data-rh="true">`);
     html = upsertHeadTag(html, headMetaSelector('name', 'description'), `<meta name="description" content="${escapeAttribute(homeMeta.description)}" data-rh="true">`);
-    html = upsertHeadTag(html, headMetaSelector('name', 'keywords'), `<meta name="keywords" content="${escapeAttribute(homeMeta.keywords || DEFAULT_META.keywords)}" data-rh="true">`);
-    html = upsertHeadTag(html, headMetaSelector('name', 'robots'), '<meta name="robots" content="index, follow" data-rh="true">');
-    html = upsertHeadTag(html, headMetaSelector('property', 'og:site_name'), '<meta property="og:site_name" content="Academy of Internal Audit" data-rh="true">');
     html = upsertHeadTag(html, headMetaSelector('property', 'og:title'), `<meta property="og:title" content="${escapeAttribute(homeMeta.title)}" data-rh="true">`);
     html = upsertHeadTag(html, headMetaSelector('property', 'og:description'), `<meta property="og:description" content="${escapeAttribute(homeMeta.description)}" data-rh="true">`);
     html = upsertHeadTag(html, headMetaSelector('property', 'og:type'), `<meta property="og:type" content="website" data-rh="true">`);
     html = upsertHeadTag(html, /<link\b(?=[^>]*\brel=["']canonical["'])[^>]*>/i, `<link rel="canonical" href="${canonicalUrl}" data-rh="true">`);
     html = upsertHeadTag(html, headMetaSelector('property', 'og:url'), `<meta property="og:url" content="${canonicalUrl}" data-rh="true">`);
-    html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:url'), `<meta property="twitter:url" content="${canonicalUrl}" data-rh="true">`);
+    html = upsertHeadTag(html, headMetaSelector('property', 'og:image'), `<meta property="og:image" content="${DEFAULT_SOCIAL_IMAGE}" data-rh="true">`);
+    html = upsertHeadTag(html, headMetaSelector('property', 'og:locale'), `<meta property="og:locale" content="en_US" data-rh="true">`);
+    html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:url'), `<meta name="twitter:url" content="${canonicalUrl}" data-rh="true">`);
     html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:card'), `<meta name="twitter:card" content="summary_large_image" data-rh="true">`);
     html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:title'), `<meta name="twitter:title" content="${escapeAttribute(homeMeta.title)}" data-rh="true">`);
     html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:description'), `<meta name="twitter:description" content="${escapeAttribute(homeMeta.description)}" data-rh="true">`);
+    html = upsertHeadTag(html, headMetaNameOrPropertySelector('twitter:image'), `<meta name="twitter:image" content="${DEFAULT_SOCIAL_IMAGE}" data-rh="true">`);
 
-    html = upsertSchema(html, 'WebSite', WEBSITE_SCHEMA);
-    html = upsertSchema(html, 'Organization', ORGANIZATION_SCHEMA);
+    // Exactly one homepage entity graph in the initial HTML.
+    html = removeLdJsonScripts(
+      html,
+      (tag) => isAiaSiteGraphScript(tag) || isBlogPostingScript(tag) || isBreadcrumbScript(tag) || isLegacyReviewScript(tag),
+    );
+    html = appendLdJson(
+      html,
+      buildPageGraph({
+        canonicalUrl,
+        title: homeMeta.title,
+        description: plainText(homeMeta.description).slice(0, 500),
+        crumbs: [],
+      }),
+    );
 
     fs.writeFileSync(DIST_PATH, html);
     console.log('✅ Injected Homepage SEO into dist/index.html');

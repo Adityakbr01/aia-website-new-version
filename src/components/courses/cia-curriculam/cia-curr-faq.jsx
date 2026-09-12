@@ -8,6 +8,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { BASE_URL } from "@/api/base-url";
+import { stripHtml } from "@/lib/schema";
 import FaqSection from "@/components/common/faq-section";
 
 
@@ -51,7 +52,7 @@ const CiaCurrFaq = () => {
           name: item.question,
           acceptedAnswer: {
             "@type": "Answer",
-            text: item.answer,
+            text: stripHtml(item.answer),
           },
         })),
       };

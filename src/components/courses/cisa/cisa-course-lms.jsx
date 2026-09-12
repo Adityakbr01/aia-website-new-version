@@ -151,7 +151,7 @@ const CisaCourseLms = ({ image = "lms_CIA.webp" }) => {
                       ? currentFeature.image
                       : `${IMAGE_PATH}/${currentFeature.image || "lms_CIA.webp"}`
                   }
-                  alt={currentFeature.title}
+                  alt={currentFeature.title} title={currentFeature.title}
                   className="max-h-56 object-contain drop-shadow-xl"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
@@ -224,7 +224,7 @@ const CisaCourseLms = ({ image = "lms_CIA.webp" }) => {
               w-full sm:w-auto
             "
         >
-          <Link to={`${ENROLL_URL}`} target="_blank" rel="noopener noreferrer" className="w-full text-center">
+          <Link to={`${ENROLL_URL}`} title={`${ENROLL_URL}`} target="_blank" rel="noopener noreferrer" className="w-full text-center">
             Enroll Now
           </Link>
         </Button>

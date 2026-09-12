@@ -1,6 +1,13 @@
 import { BASE_URL } from "@/api/base-url";
 import { Helmet } from "react-helmet-async";
 import { buildCanonicalUrl } from "@/lib/seo";
+import {
+  buildBlogPosting,
+  buildFAQPage,
+  buildPageGraph,
+  crumbsFromPath,
+  plainText,
+} from "@/lib/schema";
 import BlogFaq from "@/components/blog/blog-faq";
 import axios from "axios";
 import { ArrowLeft, Calendar, Clock, Image as ImageIcon, User } from "lucide-react";
@@ -76,50 +83,31 @@ const BlogDetails = () => {
     FALLBACK_IMAGE_URL,
   );
 
-  const formatSchemaDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
-  };
+  // Global <Meta /> is skipped on blog detail routes (see App.jsx), so this
+  // page emits its own connected entity graph: Organization + WebSite +
+  // WebPage + BreadcrumbList with the same stable @ids.
+  const pageGraph = buildPageGraph({
+    canonicalUrl: blogCanonical,
+    title: blogTitle,
+    description: plainText(blogDescription).slice(0, 500),
+    crumbs: crumbsFromPath(
+      blogSlug ? `/blogs/${blogSlug}` : "/blogs",
+      buildCanonicalUrl,
+    ),
+  });
 
-  const blogSchema = blog ? {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": blogCanonical,
-    },
-    headline: blog.blog_heading,
-    description: blog.blog_short_description,
-    image: blogImageUrl,
-    author: {
-      "@type": "Organization",
-      name: "AIA",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Academy of Internal Audit",
-      logo: {
-        "@type": "ImageObject",
-        url: `https://aia.in.net/webapi/public/assets/images/web_images/new_logo.webp`,
-      },
-    },
-    datePublished: formatSchemaDate(blog.created_at) || formatSchemaDate(blog.blog_created),
-    dateModified: formatSchemaDate(blog.updated_at) || formatSchemaDate(blog.blog_created),
-  } : null;
+  const blogSchema = blog
+    ? buildBlogPosting({
+        headline: blog.blog_heading,
+        description: blog.blog_short_description || blogDescription,
+        image: blogImageUrl,
+        canonicalUrl: blogCanonical,
+        datePublished: blog.created_at || blog.blog_created,
+        dateModified: blog.updated_at || blog.blog_created,
+      })
+    : null;
 
-  const faqSchema = faqItems.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqItems.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
-    })),
-  } : null;
+  const faqSchema = buildFAQPage(faqItems);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -381,20 +369,36 @@ const BlogDetails = () => {
         <meta name="title" content={blogTitle} />
         <meta name="description" content={blogDescription} />
         <meta name="keywords" content={blogKeywords} />
+        <meta name="robots" content="index, follow" />
         <link rel="canonical" href={blogCanonical} />
 
         {/* Open Graph */}
+        <meta property="og:type" content="article" />
         <meta property="og:title" content={blogTitle} />
         <meta property="og:description" content={blogDescription} />
         <meta property="og:url" content={blogCanonical} />
         <meta property="og:image" content={blogImageUrl} />
+        <meta property="og:image:alt" content={blog?.blog_images_alt || blogTitle} />
+        <meta property="og:site_name" content="Academy of Internal Audit" />
+        <meta property="og:locale" content="en_US" />
+        {blogSchema?.datePublished && (
+          <meta property="article:published_time" content={blogSchema.datePublished} />
+        )}
+        {blogSchema?.dateModified && (
+          <meta property="article:modified_time" content={blogSchema.dateModified} />
+        )}
 
         {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={blogCanonical} />
         <meta name="twitter:title" content={blogTitle} />
         <meta name="twitter:description" content={blogDescription} />
         <meta name="twitter:image" content={blogImageUrl} />
 
-        {/* Structured Data */}
+        {/* Structured Data: single connected graph + BlogPosting + FAQ */}
+        <script type="application/ld+json">
+          {JSON.stringify(pageGraph)}
+        </script>
         {blogSchema && (
           <script type="application/ld+json">
             {JSON.stringify(blogSchema)}
@@ -483,7 +487,7 @@ const BlogDetails = () => {
                 {blog.blog_images ? (
                   <img
                     src={getRemoteImageUrl(imageBaseUrl, blog.blog_images)}
-                    alt={blog.blog_images_alt || blog.blog_heading}
+                    alt={blog.blog_images_alt || blog.blog_heading} title={blog.blog_images_alt || blog.blog_heading}
                     className="w-full h-full object-contain"
                     onError={handleImageFallback}
                     loading="eager"
@@ -671,6 +675,9 @@ const BlogDetails = () => {
                                   alt={
                                     relatedBlog.blog_images_alt ||
                                     relatedBlog.blog_heading
+                                  } title={
+                                    relatedBlog.blog_images_alt ||
+                                    relatedBlog.blog_heading
                                   }
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                   onError={handleImageFallback}
@@ -723,6 +730,9 @@ const BlogDetails = () => {
                                 <img
                                   src={`${studentImageBaseUrl}${student.student_image}`}
                                   alt={
+                                    student.student_image_alt ||
+                                    student.student_name
+                                  } title={
                                     student.student_image_alt ||
                                     student.student_name
                                   }
@@ -818,6 +828,9 @@ const BlogDetails = () => {
                                   relatedBlog.blog_images,
                                 )}
                                 alt={
+                                  relatedBlog.blog_images_alt ||
+                                  relatedBlog.blog_heading
+                                } title={
                                   relatedBlog.blog_images_alt ||
                                   relatedBlog.blog_heading
                                 }

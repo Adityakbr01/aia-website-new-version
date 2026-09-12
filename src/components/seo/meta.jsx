@@ -1,6 +1,11 @@
 import { useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { buildCanonicalUrl, SITE_URL } from "@/lib/seo";
+import { buildCanonicalUrl } from "@/lib/seo";
+import {
+  buildPageGraph,
+  crumbsFromPath,
+  DEFAULT_SOCIAL_IMAGE,
+} from "@/lib/schema";
 import metaDataConfig from "../../meta/meta.json";
 
 const DEFAULT_META = {
@@ -88,8 +93,6 @@ export default function Meta() {
   const routeKey = matchRoute(pathname);
   const pageMeta = buildDynamicMeta(normalizedPathname) || metaDataConfig[routeKey] || DEFAULT_META;
 
-  const baseUrl = SITE_URL;
-  const rootUrl = `${baseUrl}/`;
   const canonicalUrl = buildCanonicalUrl(pathname);
 
   const isProductionHost =
@@ -97,70 +100,16 @@ export default function Meta() {
     (window.location.hostname === "aia.in.net" || window.location.hostname === "www.aia.in.net");
   const robotsMeta = isProductionHost ? pageMeta.robots || "index, follow" : "noindex, nofollow";
 
-  // Organization Schema
-  const orgSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${rootUrl}#organization`,
-    "name": "Academy of Internal Audit",
-    "alternateName": "AIA",
-    "url": rootUrl,
-    "logo": `${baseUrl}/webapi/public/assets/images/web_images/new_logo.webp`,
-    "sameAs": [
-      "https://www.facebook.com/@academyofinternalaudit",
-      "https://twitter.com/AcademyAudit",
-      "https://www.instagram.com/academyofia/",
-      "https://www.linkedin.com/company/academy-of-internal-audit",
-      "https://in.pinterest.com/academyofia/",
-      "https://www.youtube.com/@academyofia"
-    ]
-  };
-
-  // Breadcrumb Schema
-  const pathParts = normalizedPathname.split("/").filter(Boolean);
-  const breadcrumbItems = [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": rootUrl
-    }
-  ];
-
-  pathParts.forEach((part, index) => {
-    const url = buildCanonicalUrl(`/${pathParts.slice(0, index + 1).join("/")}`);
-    breadcrumbItems.push({
-      "@type": "ListItem",
-      "position": index + 2,
-      "name": part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "),
-      "item": url
-    });
+  // Single connected entity graph: Organization + WebSite + WebPage +
+  // BreadcrumbList with stable @ids. One script tag, no competing entities.
+  // (Review / AggregateRating intentionally omitted: self-published
+  // testimonials are ineligible self-serving reviews per Google policy.)
+  const pageGraph = buildPageGraph({
+    canonicalUrl,
+    title: pageMeta.title,
+    description: pageMeta.description,
+    crumbs: crumbsFromPath(normalizedPathname, buildCanonicalUrl),
   });
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": breadcrumbItems
-  };
-
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "@id": `${rootUrl}#website`,
-    "name": "Academy of Internal Audit",
-    "alternateName": [
-      "AIA",
-      "Academy of Internal Audit",
-      "AIA Institute",
-      "aia.in.net"
-    ],
-    "url": rootUrl,
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": `${baseUrl}/blogs/?s={search_term_string}`,
-      "query-input": "required name=search_term_string"
-    }
-  };
 
   return (
     <Helmet>
@@ -180,26 +129,25 @@ export default function Meta() {
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:title" content={pageMeta.title} />
       <meta property="og:description" content={pageMeta.description} />
-      <meta property="og:image" content={`${baseUrl}/android-chrome-512x512.png`} />
+      <meta property="og:image" content={DEFAULT_SOCIAL_IMAGE} />
+      <meta property="og:image:width" content="512" />
+      <meta property="og:image:height" content="512" />
+      <meta property="og:image:alt" content="Academy of Internal Audit" />
       <meta property="og:site_name" content="Academy of Internal Audit" />
+      <meta property="og:locale" content="en_US" />
 
-      {/* Twitter */}
-      <meta property="twitter:card" content="summary_large_image" />
-      <meta property="twitter:url" content={canonicalUrl} />
-      <meta property="twitter:title" content={pageMeta.title} />
-      <meta property="twitter:description" content={pageMeta.description} />
-      <meta property="twitter:image" content={`${baseUrl}/android-chrome-512x512.png`} />
+      {/* Twitter (spec uses `name`, not `property`) */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:url" content={canonicalUrl} />
+      <meta name="twitter:title" content={pageMeta.title} />
+      <meta name="twitter:description" content={pageMeta.description} />
+      <meta name="twitter:image" content={DEFAULT_SOCIAL_IMAGE} />
+      <meta name="twitter:image:alt" content="Academy of Internal Audit" />
       <meta name="twitter:site" content="@AcademyAudit" />
 
-      {/* Structured Data */}
+      {/* Structured Data: single @graph */}
       <script type="application/ld+json">
-        {JSON.stringify(orgSchema)}
-      </script>
-      <script type="application/ld+json">
-        {JSON.stringify(websiteSchema)}
-      </script>
-      <script type="application/ld+json">
-        {JSON.stringify(breadcrumbSchema)}
+        {JSON.stringify(pageGraph)}
       </script>
     </Helmet>
   );

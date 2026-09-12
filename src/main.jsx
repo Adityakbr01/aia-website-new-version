@@ -5,6 +5,8 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.jsx";
 import "./index.css";
 
+import { initSeoTitles } from "./lib/seo-titles";
+
 const app = (
   <React.StrictMode>
     <HelmetProvider>
@@ -22,3 +24,6 @@ if (root.hasChildNodes()) {
 } else {
   createRoot(root).render(app);
 }
+
+initSeoTitles();
+

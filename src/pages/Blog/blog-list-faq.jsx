@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/api/base-url";
+import { stripHtml } from "@/lib/schema";
 import {
   Accordion,
   AccordionContent,
@@ -44,7 +45,7 @@ const BlogListFaq = () => {
           name: item.question,
           acceptedAnswer: {
             "@type": "Answer",
-            text: item.answer,
+            text: stripHtml(item.answer),
           },
         })),
       };

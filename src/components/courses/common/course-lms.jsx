@@ -49,7 +49,7 @@ const CourseLms = ({ courseFeatures, cardTitle, image, description, gridClass })
         {/* Image */}
         <img
           src={`${IMAGE_PATH}/${image}`}
-          alt="LMS Image"
+          alt="LMS Image" title="LMS Image"
           className="w-full h-full object-cover"
           loading="lazy"
         />

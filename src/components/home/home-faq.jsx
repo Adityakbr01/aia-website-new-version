@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/api/base-url";
+import { stripHtml } from "@/lib/schema";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useMemo } from "react";
@@ -41,7 +42,7 @@ const HomeFaq = () => {
           name: item.question,
           acceptedAnswer: {
             "@type": "Answer",
-            text: item.answer,
+            text: stripHtml(item.answer),
           },
         })),
       };
